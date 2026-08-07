@@ -1,0 +1,26 @@
+const services = [
+  {
+    title: "Business Websites",
+    icon: "🏢",
+    description:
+      "Professional business websites designed to showcase your company, build credibility, and generate leads.",
+  },
+  {
+    title: "eCommerce Websites",
+    icon: "🛒",
+    description:
+      "Modern online stores with secure payments, product management, shopping carts, and responsive design.",
+  },
+  {
+    title: "Portfolio Websites",
+    icon: "🎨",
+    description:
+      "Beautiful portfolio websites for freelancers, designers, photographers, developers, and creative professionals.",
+  },
+  {
+    title: "Blog Websites",
+    icon: "📝",
+    description:
+      "Fast, SEO-friendly blogging platforms for sharing articles, news, tutorials, and growing your audience.",
+  },
+];
