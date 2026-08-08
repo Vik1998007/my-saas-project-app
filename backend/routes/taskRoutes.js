@@ -34,7 +34,7 @@ router.get(
     try {
       const employees = await User.find({
         role: {
-          $in: ["employee", "manager"],
+          $in: ["admin", "employee", "manager"],
         },
         isActive: {
           $ne: false,
@@ -147,13 +147,7 @@ router.post(
         });
       }
 
-      if (employee.role === "admin") {
-        return res.status(400).json({
-          success: false,
-          message:
-            "Task must be assigned to an employee or manager.",
-        });
-      }
+     
 
       if (employee.isActive === false) {
         return res.status(400).json({
