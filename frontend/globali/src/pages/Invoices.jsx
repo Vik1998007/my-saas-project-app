@@ -10,7 +10,7 @@ import { autoTable } from "jspdf-autotable";
 
 import Sidebar from "../components/Sidebar";
 const API_BASE_URL =
-  process.env.REACT_APP_API_BASE_URL;
+  `${process.env.REACT_APP_API_BASE_URL}/api`;
 
 
 
