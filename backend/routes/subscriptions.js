@@ -64,7 +64,7 @@ const PRODUCT_CATALOG = {
     billingCycle: "monthly",
     price: 35,
     setupFee: 0,
-    firstPaymentAmount: 10,
+    firstPaymentAmount: null,
     currency: "GBP",
     trialDays: 15,
     minimumTermMonths: 12,
