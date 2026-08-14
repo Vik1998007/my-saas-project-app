@@ -705,17 +705,7 @@ router.put(
         });
       }
 
-      await stripe.products.update(
-        stripeProductId,
-        {
-          name: newPlan.productName,
-          description: newPlan.description,
-          metadata: {
-            productCode: newPlan.productCode,
-            subscriptionId: String(subscription._id),
-          },
-        }
-      );
+     
 
       const updatedItem =
         await stripe.subscriptionItems.update(
