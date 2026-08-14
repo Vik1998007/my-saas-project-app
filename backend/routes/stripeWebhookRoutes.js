@@ -372,6 +372,22 @@ if (stripeSubscription.cancel_at) {
       stripeSubscription.cancel_at * 1000
     );
 }
+
+    if (
+  stripeSubscription.status === "trialing" &&
+  stripeSubscription.trial_end
+) 
+{
+  subscription.trialEndsAt =
+    new Date(
+      stripeSubscription.trial_end * 1000
+    );
+
+  subscription.nextBillingDate =
+    new Date(
+      stripeSubscription.trial_end * 1000
+    );
+}
   if (
     stripeSubscription.current_period_start
   ) {
@@ -382,21 +398,25 @@ if (stripeSubscription.cancel_at) {
       );
   }
 
-  if (
-    stripeSubscription.current_period_end
-  ) {
-    subscription.currentPeriodEnd =
-      new Date(
-        stripeSubscription.current_period_end *
-          1000
-      );
+ if (
+  stripeSubscription.current_period_end
+) {
+  subscription.currentPeriodEnd =
+    new Date(
+      stripeSubscription.current_period_end *
+        1000
+    );
 
+  if (
+    stripeSubscription.status !== "trialing"
+  ) {
     subscription.nextBillingDate =
       new Date(
         stripeSubscription.current_period_end *
           1000
       );
   }
+}
 
   if (
     stripeSubscription.status ===
