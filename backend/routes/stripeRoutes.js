@@ -707,37 +707,46 @@ router.put(
 
      
 
-      const updatedItem =
-        await stripe.subscriptionItems.update(
-          stripeItem.id,
-          {
-            price_data: {
-              currency:
-                String(
-                  newPlan.currency || "GBP"
-                ).toLowerCase(),
+     const newStripeProduct =
+  await stripe.products.create({
+    name: newPlan.productName,
+    description: newPlan.description,
+    metadata: {
+      productCode: newPlan.productCode,
+      subscriptionId: String(subscription._id),
+    },
+  });
 
-              product: stripeProductId,
+const newStripePrice =
+  await stripe.prices.create({
+    currency: String(
+      newPlan.currency || "GBP"
+    ).toLowerCase(),
 
-              unit_amount:
-                Math.round(
-                  Number(newPlan.price) * 100
-                ),
+    unit_amount: Math.round(
+      Number(newPlan.price) * 100
+    ),
 
-              recurring: {
-                interval:
-                  newPlan.billingCycle === "yearly"
-                    ? "year"
-                    : "month",
-              },
-            },
+    recurring: {
+      interval:
+        newPlan.billingCycle === "yearly"
+          ? "year"
+          : "month",
+    },
 
-            quantity: 1,
+    product: newStripeProduct.id,
+  });
 
-            proration_behavior:
-              "create_prorations",
-          }
-        );
+const updatedItem =
+  await stripe.subscriptionItems.update(
+    stripeItem.id,
+    {
+      price: newStripePrice.id,
+      quantity: 1,
+      proration_behavior:
+        "create_prorations",
+    }
+  );
 
       subscription.productCode =
         newPlan.productCode;
@@ -788,7 +797,7 @@ router.put(
         updatedItem.price.id;
 
       subscription.stripeProductId =
-        stripeProductId;
+        newStripeProduct.id;
 
       if (newPlan.minimumTermMonths > 0) {
         const contractStartDate = new Date();
