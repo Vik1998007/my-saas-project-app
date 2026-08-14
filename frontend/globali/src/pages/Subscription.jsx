@@ -364,6 +364,66 @@ function Subscription() {
   }
 };
 
+
+  const handleChangePlan = async (subscriptionId) => {
+    try {
+      const productCode = window.prompt(
+        "Enter new plan code:\n\n" +
+          "saas_founder_annual\n" +
+          "saas_flexible_monthly\n" +
+          "saas_business_monthly"
+      );
+
+      if (!productCode) {
+        return;
+      }
+
+      setActionId(subscriptionId);
+      setError("");
+      setSuccess("");
+
+      const response = await fetch(
+        `${API_BASE_URL}/stripe/change-plan`,
+        {
+          method: "PUT",
+          headers: jsonHeaders,
+          body: JSON.stringify({
+            subscriptionId,
+            productCode: productCode.trim(),
+          }),
+        }
+      );
+
+      const data = await safeJson(response);
+
+      if (!response.ok || !data.success) {
+        throw new Error(
+          data.message ||
+            "Unable to change subscription plan."
+        );
+      }
+
+      setSuccess(
+        data.message ||
+          "Subscription plan changed successfully."
+      );
+
+      await loadData();
+    } catch (changePlanError) {
+      console.error(
+        "Change plan frontend error:",
+        changePlanError
+      );
+
+      setError(
+        changePlanError.message ||
+          "Unable to change subscription plan."
+      );
+    } finally {
+      setActionId("");
+    }
+  };
+
   const styles = {
     page: {
       minHeight: "100vh",
@@ -936,7 +996,30 @@ function Subscription() {
                                 Complete
                               </button>
                             )}
-                            {subscription.stripeCustomerId &&
+  
+                          {subscription.productType === "saas" &&
+                            subscription.stripeSubscriptionId &&
+                            ![
+                              "completed",
+                              "cancelled",
+                              "expired",
+                            ].includes(subscription.status) && (
+                              <button
+                                type="button"
+                                disabled={busy}
+                                style={{
+                                  ...styles.smallButton,
+                                  background: "#0f62fe",
+                                }}
+                                onClick={() =>
+                                  handleChangePlan(subscription._id)
+                                }
+                              >
+                                {busy ? "Updating..." : "Change Plan"}
+                              </button>
+                            )}
+
+                          {subscription.stripeCustomerId &&
                                   ["trialing", "active", "past_due", "unpaid"].includes(
                                     subscription.status
                                   ) && (
