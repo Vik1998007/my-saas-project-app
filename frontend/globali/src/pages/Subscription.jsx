@@ -1037,7 +1037,27 @@ function Subscription() {
                                       {busy ? "Opening..." : "Manage Billing"}
                                     </button>
                                 )}
-
+                                {subscription.productType === "saas" &&
+  subscription.stripeSubscriptionId && (
+    <button
+      type="button"
+      disabled={busy}
+      style={{
+        ...styles.smallButton,
+        background: "#198754",
+      }}
+      onClick={() =>
+        runAction(
+          subscription._id,
+          "/sync-stripe",
+          null,
+          "Subscription synced with Stripe."
+        )
+      }
+    >
+      {busy ? "Syncing..." : "Sync Stripe"}
+    </button>
+  )}
                           {!['completed', 'cancelled', 'expired'].includes(
                             subscription.status
                           ) && (
