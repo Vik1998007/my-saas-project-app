@@ -1,5 +1,10 @@
 const express = require("express");
 const mongoose = require("mongoose");
+const Stripe = require("stripe");
+
+const stripe = new Stripe(
+  process.env.STRIPE_SECRET_KEY
+);
 
 const Subscription = require(
   "../models/Subscription"
@@ -920,6 +925,135 @@ router.get("/", authMiddleware, async (req, res) => {
     });
   }
 });
+
+/*
+|--------------------------------------------------------------------------
+| Sync subscription with Stripe
+|--------------------------------------------------------------------------
+*/
+
+router.put(
+  "/:subscriptionId/sync-stripe",
+  authMiddleware,
+  async (req, res) => {
+    try {
+      const access =
+        await checkSubscriptionAccess(req, res);
+
+      if (!access) {
+        return;
+      }
+
+      const { companyId } = access;
+
+      const subscription =
+        await Subscription.findOne({
+          _id: req.params.subscriptionId,
+          company: companyId,
+          productType: "saas",
+        });
+
+      if (!subscription) {
+        return res.status(404).json({
+          success: false,
+          message: "SaaS subscription not found.",
+        });
+      }
+
+      if (!subscription.stripeSubscriptionId) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "Stripe subscription is not connected.",
+        });
+      }
+
+      const stripeSubscription =
+        await stripe.subscriptions.retrieve(
+          subscription.stripeSubscriptionId
+        );
+
+      const stripeItem =
+        stripeSubscription.items?.data?.[0];
+
+      const statusMap = {
+        active: "active",
+        trialing: "trialing",
+        past_due: "past_due",
+        unpaid: "unpaid",
+        paused: "paused",
+        canceled: "cancelled",
+        incomplete: "incomplete",
+        incomplete_expired: "incomplete_expired",
+      };
+
+      subscription.status =
+        statusMap[stripeSubscription.status] ||
+        subscription.status;
+
+      subscription.cancelAtPeriodEnd =
+        Boolean(
+          stripeSubscription.cancel_at_period_end
+        ) ||
+        Boolean(stripeSubscription.cancel_at);
+
+      subscription.autoRenew =
+        !subscription.cancelAtPeriodEnd;
+
+      if (stripeSubscription.trial_end) {
+        subscription.trialEndsAt =
+          new Date(
+            stripeSubscription.trial_end * 1000
+          );
+      }
+
+      if (stripeItem?.current_period_start) {
+        subscription.currentPeriodStart =
+          new Date(
+            stripeItem.current_period_start * 1000
+          );
+      }
+
+      if (stripeItem?.current_period_end) {
+        subscription.currentPeriodEnd =
+          new Date(
+            stripeItem.current_period_end * 1000
+          );
+
+        subscription.nextBillingDate =
+          new Date(
+            stripeItem.current_period_end * 1000
+          );
+      }
+
+      if (stripeSubscription.status === "canceled") {
+        subscription.nextBillingDate = null;
+        subscription.autoRenew = false;
+      }
+
+      await subscription.save();
+
+      return res.status(200).json({
+        success: true,
+        message:
+          "Subscription synced with Stripe successfully.",
+        subscription,
+      });
+    } catch (error) {
+      console.error(
+        "Stripe subscription sync error:",
+        error
+      );
+
+      return res.status(500).json({
+        success: false,
+        message:
+          error.message ||
+          "Unable to sync subscription with Stripe.",
+      });
+    }
+  }
+);
 
 /*
 |--------------------------------------------------------------------------
